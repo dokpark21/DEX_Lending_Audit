@@ -24,8 +24,6 @@
 
 ## Repo 1.
 
----
-
 ##### Repo: https://github.com/ooMia/Upside_DEX_solidity
 
 ### 1-1. Type conversion in refresh
@@ -45,6 +43,8 @@
 1. dx, dy를 구하기 전에 결과 값 검사
 2. 공격자의 토큰 전송으로 인한 overflow 상황에서 bx,by를 조정할 수 있는 함수 선언(다른 곳으로 transfer or burn)
 
+---
+
 ### 1-2. LpBalances in removeLiquidity()
 
 - Root cause: Dex.sol:99,100
@@ -60,6 +60,8 @@
 > 1. lpBalances[msg.sender] -> total lp balance
 > 2. ERC20 totalSupply() or 전역변수를 통해 추적
 
+---
+
 ### 1-3. Update Balances After Swap()
 
 - Root cause: Dex.sol:109-136
@@ -74,3 +76,5 @@
 > 1. balance update modifier 사용 -> refresh()
 > 2. ERC20 balanceOf() 사용
 > 3. swapX() or swapY() 실행 후 balance update
+
+---
