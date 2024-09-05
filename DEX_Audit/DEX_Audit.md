@@ -1,7 +1,5 @@
 # Upside DEX Audit - kyrie
 
----
-
 ## 목차
 
 - https://github.com/ooMia/Upside_DEX_solidity
@@ -42,10 +40,10 @@
 
 ##### Recommendation
 
-> dy, dy 증감량을 파악해 직접 토큰 transfer 통해 유동성 풀의 토큰 비율을 유지할 수 있으나 예기치 못한 overflow가 발생 가능하기 때문에 전체적인 로직 변화보단 유효성 검사 및 해당 상황에 호출할 함수 정의가 필요합니다.
+> dy, dy 증감량을 파악해 직접 토큰 transfer 통해 유동성 풀의 토큰 비율을 유지할 수 있으나 예기치 못한 overflow가 발생 가능하기 때문에 전체적인 로직 변화보단 유효성 검사 및 해당 상황에 호출할 함수 정의가 필요합니다.
 
 1. dx, dy를 구하기 전에 결과 값 검사
-2. 공격자의 토큰 전송으로 인한 overflow 상황에서 bx,by를 조정할 수 있는 함수 선언(다른 곳으로 transfer or burn)
+2. 공격자의 토큰 전송으로 인한 overflow 상황에서 bx,by를 조정할 수 있는 함수 선언(다른 곳으로 transfer or burn)
 
 ### 1-2. LpBalances in removeLiquidity()
 
