@@ -2,12 +2,6 @@
 
 ---
 
-## 목차
-
-- https://github.com/ooMia/Upside_DEX_solidity
-- https://github.com/rivercastleone/DEX_solidity
-- https://github.com/je1att0/DEX_solidity
-
 ## 감사 범위
 
 - **Smart Contract:** [감사 대상 스마트 계약 파일 및 위치]
@@ -93,8 +87,6 @@
 > refresh() or AddLiquidity()에서 amountX,Y가 0인지 검사
 
 ## Repo 2.
-
----
 
 ##### Repo: https://github.com/rivercastleone/DEX_solidity
 
@@ -387,3 +379,207 @@
 ##### Recommendation:
 
 > swap 함수에서 amountX 또는 amountY 중 하나가 반드시 0이어야 한다는 조건을 명확하게 검사하고, 유동성 풀에 충분한 토큰이 존재하는지 확인하는 로직을 추가해야 합니다. 이를 통해 스왑 과정에서 발생할 수 있는 오류를 방지할 수 있습니다.
+
+## Repo 8.
+
+##### Repo: https://github.com/oliverslife/DEX_solidity
+
+##### commit: 067004c0dbb7223926d29bb9e136d33a6c71ba46
+
+### 8-1. Mint Token Calculation in addLiquidity
+
+- Root cause: Dex.sol (addLiquidity 함수에서 lpToken 발행량 계산 시 문제 발생)
+- Severity: High
+
+##### Description:
+
+> addLiquidity 함수에서 mintX와 mintY 중 더 작은 값을 사용하여 LP 토큰 발행량을 결정하고 있습니다. 그러나 이렇게 하면 발행량이 더 작은 값에 맞춰지게 되면서, 더 큰 쪽의 토큰은 그대로 유동성 풀에 들어가 비율이 불균형하게 됩니다. 이로 인해 유동성 공급자가 의도하지 않은 손해를 볼 수 있으며, 풀의 비율이 어긋나 이후에 유동성을 공급하거나 제거하는 다른 사용자들에게도 영향을 미칠 수 있습니다.
+
+##### Recommendation:
+
+> addLiquidity에서 더 작은 값에 맞춰 LP 토큰을 발행한 후, 더 큰 쪽의 토큰에 대해서도 그 비율에 맞춰 재조정이 필요합니다. 예를 들어, 유동성 풀의 비율을 일정하게 유지하기 위해 더 큰 쪽의 토큰 양을 다시 계산하여 적절한 값을 반환하거나 수정하는 로직을 추가해야 합니다. 이를 통해 유동성 풀의 비율을 유지하고, 사용자들이 손해를 보지 않도록 할 수 있습니다.
+
+### 8-2. External Transfer Issue in addLiquidity (balanceOf 사용 문제)
+
+- Root cause: Dex.sol (addLiquidity에서 balanceOf 함수 사용으로 인한 문제)
+- Severity: High
+
+##### Description:
+
+> addLiquidity 함수에서 유저의 토큰 잔액을 balanceOf 함수를 통해 가져오고 있습니다. 이 방식은 유동성 풀에 직접 전송된 외부 토큰을 고려하지 않기 때문에, 풀의 상태가 예상과 다르게 왜곡될 수 있습니다. 공격자가 풀에 토큰을 직접 전송하는 경우, 풀의 실제 상태와 일치하지 않는 상황이 발생할 수 있으며, 이는 유동성 공급자나 스왑 사용자가 손해를 볼 수 있는 상황을 초래할 수 있습니다.
+
+##### Recommendation:
+
+> addLiquidity에서는 외부에서 직접 전송된 토큰을 처리할 수 있도록 풀의 상태를 추적하는 별도의 전역 변수나 로직을 추가해야 합니다. 이를 통해 외부 전송에 의한 문제를 방지하고, 풀의 상태를 항상 정확하게 유지할 수 있습니다. 혹은, 풀에 직접적으로 전송된 토큰에 대한 처리를 하는 별도의 함수나 modifier를 구현하여 풀의 비율이 유지되도록 해야 합니다.
+
+### 8-3. Reserve Update Issue in \_updateReserve (balanceOf 사용 문제)
+
+- Root cause: Dex.sol (\_updateReserve 함수에서 balanceOf 사용 문제)
+- Severity: High
+
+##### Description:
+
+> \_updateReserve 함수에서도 balanceOf 함수를 통해 유동성 풀의 잔액을 가져오고 있습니다. 이는 외부에서 직접적으로 유동성 풀로 전송된 토큰을 고려하지 않기 때문에, 풀의 상태가 불균형해질 수 있습니다. 외부에서 보내진 토큰이 풀의 잔액에 반영되지만, 이를 기반으로 업데이트된 상태는 실제 유동성 풀의 비율을 왜곡할 수 있습니다.
+
+##### Recommendation:
+
+> balanceOf를 통해 잔액을 가져오는 대신, 풀의 상태를 추적하는 전역 변수를 사용하여 유동성 공급과 제거 시 풀의 비율이 정확하게 반영되도록 해야 합니다. 추가적으로, 외부에서 직접 전송된 토큰에 대한 처리를 위한 로직이나 검증 절차를 \_updateReserve 함수에 추가하는 것이 좋습니다. 이를 통해 풀의 상태가 항상 정확하게 유지되고, 스왑 및 유동성 공급 시 발생할 수 있는 오류를 방지할 수 있습니다.
+
+---
+
+## Repo 9.
+
+##### Repo: https://github.com/skskgus/Dex_solidity
+
+##### commit: 1487df3439ea6e198f14032db91347bb0dbb1c0a
+
+### 9-1. balanceOf로 잔고 업데이트
+
+- Root cause: Dex.sol (잔액을 balanceOf로 가져오는 방식)
+- Severity: High
+
+##### Description:
+
+> 현재 잔고 업데이트가 ERC20 토큰의 balanceOf 함수를 통해 이루어지고 있습니다. 그러나 이 방식은 외부에서 컨트랙트로 직접 전송된 토큰을 반영하지 않아 풀의 잔액이 왜곡될 수 있습니다. 공격자가 컨트랙트로 직접 토큰을 전송하거나 예기치 않은 상황에서 풀의 비율이 틀어질 수 있습니다.
+
+##### Recommendation:
+
+> 잔고 업데이트를 추적하는 별도의 전역 변수를 사용하여 풀의 상태를 정확히 반영하는 것이 필요합니다. 이렇게 하면 외부 전송으로 인한 불균형을 방지하고 유동성 풀의 비율을 안정적으로 유지할 수 있습니다.
+
+### 9-2. ERC20 사용 X (유동성 토큰 ERC20 사용 안함)
+
+- Root cause: Dex.sol (ERC20을 사용하지 않음)
+- Severity: Medium
+
+##### Description:
+
+> 유동성 공급 시, ERC20 토큰 표준을 사용하지 않고 유동성 공급자들의 지분을 관리하고 있습니다. 이를 통해 유동성 공급자들이 공급한 유동성에 대한 투명성과 추적성을 확보하기 어렵습니다. ERC20 표준을 사용하면 유동성 공급자들이 LP 토큰을 통해 자신의 지분을 쉽게 관리하고 추적할 수 있습니다.
+
+##### Recommendation:
+
+> ERC20 표준을 사용하여 유동성 토큰(LP 토큰)을 발행하고 관리하는 것이 더 바람직합니다. 이를 통해 사용자는 자신의 유동성을 더욱 쉽게 추적하고 관리할 수 있으며, ERC20 표준의 이점을 누릴 수 있습니다.
+
+### 9-3. Sqrt 최적화된 버전 사용
+
+- Root cause: Dex.sol (제곱근 계산의 비효율성)
+- Severity: Informational
+
+##### Description:
+
+> 유동성 토큰 발행 시 제곱근 계산을 사용하고 있습니다. 하지만 제곱근 계산은 Solidity에서 가스 비용이 많이 소모되는 연산 중 하나입니다. 따라서 보다 최적화된 제곱근 계산 알고리즘을 사용하는 것이 가스 비용 절감에 효과적일 수 있습니다.
+
+##### Recommendation:
+
+> 제곱근 계산을 최적화된 알고리즘으로 대체하여 가스 비용을 절감할 수 있습니다. 예를 들어, OpenZeppelin의 Math 라이브러리를 사용하거나, 고정 소수점 연산을 적용하여 더 효율적으로 제곱근을 계산하는 방법을 사용할 수 있습니다.
+
+### 9-4. \_update 함수는 modifier로 사용
+
+- Root cause: Dex.sol (\_update 함수 사용 방식)
+- Severity: Medium
+
+##### Description:
+
+> \_update 함수는 풀의 상태를 업데이트하는 중요한 역할을 하지만, 이 함수를 별도의 함수로 사용하기보다는 modifier로 사용하는 것이 더 직관적이고 안전한 방법이 될 수 있습니다. 이 방식으로 모든 함수에서 상태를 업데이트할 수 있으며, 개발자는 상태 업데이트를 깜빡하는 실수를 방지할 수 있습니다.
+
+##### Recommendation:
+
+> \_update를 modifier로 선언하여 유동성 풀의 상태를 관리하는 함수들(addLiquidity, removeLiquidity, swap)에서 자연스럽게 호출되도록 변경하는 것이 좋습니다. 이를 통해 상태 관리의 일관성을 확보하고 실수를 방지할 수 있습니다.
+
+### 9-5. \_min 값으로 정하고 큰 쪽 초기화
+
+- Root cause: Dex.sol (유동성 공급 시 더 큰 쪽의 값 처리)
+- Severity: High
+
+##### Description:
+
+> 유동성 공급 시, amountX와 amountY 중 더 작은 값에 맞춰 LP 토큰이 발행되고 있지만, 큰 쪽에 대해서는 별다른 조정이 이루어지지 않고 있습니다. 이로 인해 유동성 풀의 비율이 왜곡될 수 있으며, 향후 유동성 공급이나 스왑 시 불균형을 초래할 수 있습니다.
+
+##### Recommendation:
+
+> 유동성 공급 시 더 작은 값에 맞춰 LP 토큰을 발행한 후, 큰 쪽의 토큰 양도 비율에 맞게 다시 조정해야 합니다. 이를 통해 유동성 풀의 비율을 유지하고, 모든 유동성 공급자가 공정한 비율로 참여할 수 있도록 보장해야 합니다.
+
+### 9-6. Swap 시 둘 다 0 가능
+
+- Root cause: Dex.sol (swap 함수에서 amountX와 amountY가 모두 0일 수 있음)
+- Severity: Medium
+
+##### Description:
+
+> swap 함수에서 amountX와 amountY가 모두 0일 경우에도 트랜잭션이 실행될 수 있습니다. 이로 인해 불필요한 가스 소모가 발생하고, 기능적으로도 문제가 생길 수 있습니다. 일반적으로 스왑은 하나의 자산을 다른 자산으로 교환하는 것이므로, 하나는 0이어야 하고, 다른 하나는 양수가 되어야 합니다.
+
+##### Recommendation:
+
+> swap 함수에서 amountX와 amountY 중 하나가 반드시 0이어야 한다는 조건을 명확하게 추가해야 합니다. 이렇게 하면 잘못된 스왑 호출을 방지할 수 있고, 불필요한 가스 소모를 줄일 수 있습니다.
+
+---
+
+## Repo 10.
+
+##### Repo: https://github.com/WOOSIK-jeremy/DEX_solidity
+
+##### commit: 3a5de86200f697fa01393b5513aa4d610af6cf85
+
+### 10-1. Rebalance After addLiquidity (비율 조정 문제)
+
+- Root cause: Dex.sol (addLiquidity 후 비율 조정 문제)
+- Severity: High
+
+##### Description:
+
+> addLiquidity 함수에서 유동성을 공급할 때, 더 작은 값에 맞춰 LP 토큰이 발행되지만 더 큰 쪽의 토큰에 대해서는 적절한 재조정이 이루어지지 않습니다. 이로 인해 풀의 토큰 비율이 왜곡될 수 있으며, 이후에 유동성을 공급하는 사용자들은 손해를 보게 됩니다. 특히 유동성 공급 후 비율이 틀어지면, 스왑이나 추가적인 유동성 공급 시 예기치 않은 손실을 초래할 수 있습니다.
+
+##### Recommendation:
+
+> 유동성 공급 후 더 큰 쪽의 토큰은 비율에 맞게 다시 조정해야 합니다. 이를 위해, LP 토큰 발행 후 다음과 같은 방식을 사용해 해당 토큰 예치 금액을 다시 비율에 맞게 계산하여 재조정할 수 있습니다: 이를 통해 풀의 비율이 유지되고, 이후 사용자가 공정하게 유동성을 공급하거나 스왑할 수 있습니다.
+
+### 10-2. totalLp == totalSupply 중복 사용
+
+- Root cause: Dex.sol (totalLp와 totalSupply 중복 사용 문제)
+- Severity: Medium
+
+##### Description:
+
+> 코드에서 totalLp와 totalSupply가 동일한 개념으로 사용되고 있으나, 두 변수가 중복되어 관리되고 있습니다. 이는 불필요한 중복이며, 상태 관리가 혼란스러워질 수 있습니다. 두 변수 중 하나만 사용해도 전체 유동성의 관리를 할 수 있습니다.
+
+##### Recommendation:
+
+> totalLp와 totalSupply 중 하나를 선택하여 사용하는 것이 좋습니다. 일반적으로 ERC20 표준에서는 totalSupply를 사용해 전체 토큰 발행량을 관리하므로, totalSupply만 사용하고 totalLp는 제거하는 것이 적절합니다.
+
+### 10-3. Token Balance 사용 문제
+
+- Root cause: Dex.sol (balanceOf 사용 방식)
+- Severity: High
+
+##### Description:
+
+> 풀의 상태를 ERC20 토큰의 balanceOf 함수를 사용해 가져오고 있는데, 이 방식은 외부에서 직접 전송된 토큰에 대한 처리를 하지 않습니다. 만약 외부에서 유동성 풀로 직접 토큰이 전송되면, 풀의 비율이 왜곡될 수 있고, 이를 기반으로 계산된 값들이 잘못될 수 있습니다.
+
+##### Recommendation:
+
+> 풀의 잔액을 balanceOf로 직접 가져오는 대신, 유동성 공급과 제거 시 추적할 수 있는 별도의 전역 변수를 도입해 풀의 상태를 관리하는 것이 좋습니다. 또한, 외부에서 직접 전송된 토큰을 감지하고 처리할 수 있는 로직을 추가해야 합니다.
+
+### 10-4. removeLiquidity 변수명 불명확
+
+- Root cause: Dex.sol (removeLiquidity 함수에서 currentX, currentY 변수명 불명확)
+- Severity: Informational
+
+##### Description:
+
+> removeLiquidity 함수에서 currentX, currentY 변수의 이름이 함수의 목적과 의미에 비해 불명확합니다. 이 변수들이 어떤 값을 나타내는지 명확하지 않아, 코드 가독성과 유지보수에 불편함을 초래할 수 있습니다.
+
+##### Recommendation:
+
+> 변수명을 보다 직관적이고 의미 있게 변경하는 것이 좋습니다. 예를 들어, currentX, currentY 대신 poolReserveX, poolReserveY와 같이 변수가 나타내는 의미를 분명하게 해주는 이름을 사용할 수 있습니다. 이를 통해 코드의 가독성과 유지보수성을 높일 수 있습니다.
+
+### 10-5. swap 시 둘 다 0 고려하지 않음
+
+- Root cause: Dex.sol (swap 함수에서 amountX와 amountY가 모두 0인 경우 처리 부족)
+- Severity: Medium
+
+##### Description:
+
+> swap 함수에서 amountX와 amountY가 모두 0인 상황에 대한 처리가 없습니다. 이 경우에도 함수가 실행되어 불필요한 가스 비용이 발생할 수 있으며, 의도하지 않은 트랜잭션이 발생할 수 있습니다.
+
+##### Recommendation:
+
+> swap 함수에서 amountX와 amountY 중 하나가 반드시 0이어야 한다는 검증 로직을 추가해야 합니다. 두 값이 모두 0일 경우 트랜잭션을 중단하고, 불필요한 계산 및 가스 소모를 방지할 수 있도록 해야 합니다.
