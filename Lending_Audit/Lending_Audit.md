@@ -178,3 +178,72 @@
 > 마지막 업데이트 블록을 통해 불필요한 동작을 막거나 굳이 모든 사용자의 이자 보상을 계산할 필요 없을 경우를 대비해 distributeInterest()를 interest()와 분리하는 것이 좋아보입니다.
 
 ## Repo 5.
+
+##### Repo: https://github.com/oliverslife/Lending_solidity
+
+##### commit: a88436873ff204bcc0cc337eddefe94782384ef3
+
+### 5-1. TranferFrom usdc in repay()
+
+##### root cause: DreamAcademyLending.sol:(repay())
+
+##### Severity: Critical
+
+##### Description
+
+> repay() 부분에서 이자를 계산하고 사용자의 대출 금액을 차감하고 있지만 실제 usdc는 받아오고 있지 않습니다. 이렇게 되면 유저들은 빌린 뒤 해당 함수를 호출해 자신의 대출금액을 차감하고 토큰은 보내지 않는식으로 계속해서 공격할 수 있습니다.
+
+##### Recommendation
+
+> 사용자의 대출 금액을 업데이트 한 뒤에 transferFrom을 통해 실제 자산을 받아와야 합니다. 그리고 차액에 관해서는 그냥 먼저 계산한 뒤 안받는 것이 더 좋은 방법일 거 같습니다.
+
+### 5-2. Separate check in withdraw()
+
+##### root cause: DreamAcademyLending.sol:(withdraw())
+
+##### Severity: Critical
+
+##### Description
+
+> withdraw 부분에서 이더, 토큰 출금에 관한 조건 검사를 동시에 진행하고 있습니다. 둘은 다른 자산이고 프로토콜 내부에서 사용하는 방식도 다르기 때문에 처음부터 분리해서 검사를 진행해야 합니다. 저렇게 된다면 eth에 관련된 검사가 제대로 안될 수 있습니다.
+
+##### Recommendation
+
+> 처음부터 두 자산을 분리하고 이더는 빌린 usdc와 이자와 출금하려는 양을 비교해야 합니다.
+
+## Repo 6.
+
+##### Repo: https://github.com/WOOSIK-jeremy/Lending_solidity
+
+##### commit: 544c3aff1cac5dd1f996e451c0fcfcd93a274843
+
+### 6-1. First Account
+
+##### root cause: DreamAcademyLending.sol
+
+##### Severity: High
+
+##### Description
+
+> 이더를 예치할 때 따로 firstAccount를 사용하고 있는데 만약 유저가 이후에 여기서 withdraw를 하게되면 firstAccount에 있는 값 보다 accounts에 있는 값이 더 작이질 수도 있고 여러 조건 검사에서 불필요한 에러가 발생할 수 있습니다.
+> firstAccount의 값은 청산을 제외하면 줄이들지 않고 있기 때문에 그렇습니다.
+
+##### Recommendation
+
+> firstAccount를 사용할 것이라면 이것을 조금 더 제어할 수 있는 함수나 withdraw 부분에서 firstAccount 금액을 같이 조절해야 합니다.
+> 굳이 사용하기 보다는 그냥 accounts에서 blocknumber로 유저가 예치한 이더 금액을 관리하면 더 좋아보입니다.
+
+### 6-2. withdraw usdc and reentrancy attack
+
+##### root cause: DreamAcademyLending.sol:(withdraw())
+
+##### Severity: Critical
+
+##### Description
+
+> 현재 withdraw는 호출되면 무조건 eth를 출금하는 방식으로 되어 있습니다. usdc 출금 기능 또한 반드시 필요한 부분이기에 추가해야 합니다.
+> 이더 잔액에 대한 업데이트가 되지 않습니다. 출금을 해도 해당 컨트랙트에서는 유저가 아직 이더를 예치한 상황처럼 보이게 됩니다.
+
+##### Recommendation
+
+> usdc 출금 기능은 반드시 구현되어야 합니다. 그리고 call을 통해 유저에게 value를 전송하기 전에 accounts의 amount를 반드시 value 만큼 줄여야 합니다.
